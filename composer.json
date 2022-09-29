@@ -1,0 +1,6 @@
+{
+    "require": {
+        "phpmailer/phpmailer": "^6.6",
+        "apache/log4php": "^2.3.0"
+    }
+}
