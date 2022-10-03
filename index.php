@@ -47,8 +47,8 @@ if (count($_POST) > 0) {
 
     // Check the subject
     $subject = $_POST["subject"];
-    if (empty($html)) {
-        $error = "Missing 'html' content";
+    if (empty($subject)) {
+        $error = "Missing 'subject' content";
     }
 
     // Check the html content
@@ -63,13 +63,13 @@ if (count($_POST) > 0) {
         $error = "Missing 'text' content";
     }
 
-   // Check the recipient
-    $recipients = $_POST["recipient-variables"];
+    // Check the recipient
+    $recipients_json= $_POST["recipient-variables"];
 
-    if (empty($recipients)) {
+    if (empty($recipients_json)) {
         $error = "Missing 'recipient' addresses";
     } else {
-        $recipients = json_decode($recipient, true);
+        $recipients = json_decode($recipients_json, true);
     }
 
      // If there is an error, log it and return
@@ -86,23 +86,24 @@ if (count($_POST) > 0) {
         $subject,
         $html,
         $text,
-        $recipient);
+        $recipients);
 
+    // Success
+    http_response_code(200);
     echo "DONE";
 
     $logger->info('Finish to send : ' . $_POST['v:email-id']);
 
 } else {
-    $logger->info('No message received');
     echo "NO MESSAGE";
 }
 
 /**
  * Send the email to SMTP Server
  */
-function sendMessage($id, $from, $reply_to, $subject, $html, $text, $recipient){
+function sendMessage($id, $from, $reply_to, $subject, $html, $text, $recipients){
 
-    global $logger;
+    global $logger, $config;
 
     $logger->info('Preparing to send a new message : ' . $id);
 
@@ -112,23 +113,41 @@ function sendMessage($id, $from, $reply_to, $subject, $html, $text, $recipient){
     $mail->setFrom($reply_to);
     //$mail->addReplyTo($reply_to);
     $mail->Subject = $subject;
-    $mail->isHTML(true);
-    $mail->AltBody = $text;
-    $mail->Body = $html;
 
-    $logger->info('Ready to send a new message : ' . $id);
+    // For each recipient we send a new email
+    foreach ($recipients as $email => $recipient_array) {
 
-    // Add the recipient
-    $mail->addAddress("ltoinel@free.fr");
+        // If the test mode is disable or the target email is the test email
+        if (! $config['test_mode'] 
+            || ($config['test_mode'] && $email == $config['test_email'])){
 
-    // Send the email
-    if(!$mail->send()){
-        $logger->error($mail->ErrorInfo);
-        return false;
-    }else{
-        $logger->info('Message has been sent : ' . $id);
-        return true;
+            $logger->info('Sending email to  : ' . $email);
+            $mail->addAddress($email);
+
+            // We search and replace recipient variables
+            foreach ($recipient_array as $key => $value) {
+                $html = str_replace("%recipient." . $key . "%", $value, $html);
+                $text = str_replace("%recipient." . $key . "%", $value, $text);
+            }
+            
+            // Let's define the mail content
+            $mail->isHTML(true);
+            $mail->Body = $html;
+            $mail->AltBody = $text;
+
+            // Send the email
+            if(!$mail->send()){
+                $logger->error($mail->ErrorInfo);
+                return false;
+            }else{
+                $logger->info('Message correctly sent : ' . $id);
+                return true;
+            }
+
+            $mail->clearAddresses();
+        }
     }
+    
 }
 
 /**
@@ -139,7 +158,7 @@ function getMailerInstance(){
     global $config;
     global $logger;
     
-    $logger->info("Instanciating a new PhpMailer instance");
+    $logger->debug("Instanciating a new PhpMailer instance");
 
     $mail = new PHPMailer();
     $mail->CharSet = 'UTF-8';
@@ -155,5 +174,4 @@ function getMailerInstance(){
     $logger->info("SMTP connection established");
 
     return  $mail;
-
 }

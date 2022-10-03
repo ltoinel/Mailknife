@@ -1,0 +1,16 @@
+<?php
+
+return array(
+
+    // The SMTP settings
+    'smtp' => array(
+        'host' => 'mail.server.com',
+        'port' => 465,
+        'username' => 'myusername',
+        'password' => 'mypassword',
+    ),
+
+    // This will send an email only to this subscriber if enabled
+    'test_mode' => true,  
+    'test_email' => 'mymail@test.com'
+);
