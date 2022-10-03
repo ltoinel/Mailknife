@@ -1,7 +1,12 @@
 # Mailknife
 
-Mailknife is a simple alternative tool to Mailgun that is more and more difficult to use if you don't send enouth mails per days.
-Mailknife exposes a webservice to send a mail with the same signature than the Mailgun API.
-Mailknife transform the message into multiple SMTP calls.
+* Mailknife is a very simple alternative tool to Mailgun.
+* Mailknife is adapted for small quantity of mails to send.
+* Mailknife exposes a webservice to send a mail with the same signature than the Mailgun API.
+* Mailknife transforms the message into multiple SMTP calls.
 
 ## Work in progress ...
+
+TODO : 
+* Return a JSON response.
+
