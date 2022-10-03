@@ -1,10 +1,5 @@
 <?php
 
-// Reset 
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
-error_reporting(-1);
-
 // Use PHPMailer
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -15,17 +10,28 @@ require __DIR__ . '/vendor/autoload.php';
 // Initialize the logger
 Logger::configure("./config/logger.xml");
 $logger = Logger::getLogger("default");
-$logger->info("Starting Mailknife");
+$logger->info("New query : " . $_SERVER['REQUEST_URI'] . " from " . $_SERVER['REMOTE_ADDR']);
 
 // Load the configuration file
 $config = include('config/config.php');
 
-// If we have a post message
-if (count($_POST) > 0) {
+// We enable errors in test mode
+if ($config['test_mode']) {
+    ini_set('display_startup_errors', 1);
+    ini_set('display_errors', 1);
+    error_reporting(-1);
+}
+
+// Set up the default query path
+$uri = $config['path']."/v3/".$config['domain'];
+
+// We return only JSON content
+header("Content-Type: application/json");
+
+// If we have to send a message
+if ($_SERVER['REQUEST_URI'] == $uri."/messages"){
 
     $logger->info('New message received');
-
-    // Check the mandatory parameters
 
     // Check the email id
     $id = $_POST["v:email-id"];
@@ -90,12 +96,22 @@ if (count($_POST) > 0) {
 
     // Success
     http_response_code(200);
-    echo "DONE";
-
+    $response = array(
+            "message" => "Queued. Thank you.",
+            "id" => "<'.$id.'@mailknife.org>"
+    ); 
+                      
+    echo json_encode($response);
     $logger->info('Finish to send : ' . $_POST['v:email-id']);
 
 } else {
-    echo "NO MESSAGE";
+    $error = "Unsupported query";
+    $logger->error($error . " : " . $_SERVER['REQUEST_URI']);
+    http_response_code(400);
+    $response = array(
+            "message" => $error
+    );
+    echo json_encode($response);
 }
 
 /**

@@ -12,5 +12,11 @@ return array(
 
     // This will send an email only to this subscriber if enabled
     'test_mode' => true,  
-    'test_email' => 'mymail@test.com'
+    'test_email' => 'mymail@test.com',
+
+    // The domain used to send email
+    'domain' => 'apollo-van.fr',
+
+    // The installation path of your Mailknife on your webserver
+    'path' => '/mailknife'
 );
